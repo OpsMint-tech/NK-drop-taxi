@@ -13,6 +13,7 @@ import ScrollToTop from './components/ScrollToTop';
 import WhatsAppButton from './components/WhatsappButton';
 import PhoneButton from './components/PhoneButton';
 import useTitleScroll from './hooks/useTitleScroll';
+import { ToastContainer } from "react-toastify";
 
 function App() {
   useTitleScroll(150); // 150ms scrolling speed
@@ -21,6 +22,7 @@ function App() {
   return (
     <Router>
       <ScrollToTop />
+      <ToastContainer />
       <div className="min-h-screen flex flex-col bg-gray-50">
         <Header />
 

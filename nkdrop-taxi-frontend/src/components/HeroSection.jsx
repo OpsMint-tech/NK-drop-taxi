@@ -49,7 +49,7 @@ import { useState } from 'react';
 import Reveal from './Reveal';
 import { motion } from 'framer-motion';
 
-import { ToastContainer } from "react-toastify/unstyled";
+import { ToastContainer } from "react-toastify";
 
 const HeroSection = () => {
     const [activeTab, setActiveTab] = useState('oneWay');
@@ -141,7 +141,6 @@ const HeroSection = () => {
                     </div>
                 </div>
             </div>
-            <ToastContainer />
         </>
     );
 };

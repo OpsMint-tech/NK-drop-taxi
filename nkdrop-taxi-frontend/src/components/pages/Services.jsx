@@ -322,8 +322,17 @@ export default function Services() {
   const [visibleCount, setVisibleCount] = useState(3);
   const navigate = useNavigate();
 
-  const handleBookNow = () => {
-    navigate("/#my-section");
+  const handleBookNow = (carName) => {
+    const mapping = {
+      "Ertiga": "SUV",
+      "Etios": "Etios",
+      "Suv. Innova": "Innova",
+      "Xylo": "SUV",
+      "Swift": "Sedan",
+      "Innova Crysta": "Innova"
+    };
+    const vehicleType = mapping[carName] || "Sedan";
+    navigate("/", { state: { vehicleType } });
   };
 
   const showAll = visibleCount >= carList.length;
@@ -495,7 +504,7 @@ export default function Services() {
 
                 {/* Button */}
                 <button
-                  onClick={handleBookNow}
+                  onClick={() => handleBookNow(car.name)}
                   className="mt-6 w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2 rounded-lg font-semibold transition-colors"
                 >
                   Book Now

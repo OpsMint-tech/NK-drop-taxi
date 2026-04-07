@@ -3,14 +3,14 @@ import { motion, useAnimation } from 'framer-motion';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import VehicleCard from './VehicleCard';
 import Reveal from './Reveal';
-import Booknow from '../../public/images/booknow.png'
+const Booknow = '/images/booknow.png';
 
 const cars = [
   {
     name: 'Innova',
     image: '/images/Innova_Right.png',
     seat: '7+1',
-    type: 'INNOVA',
+    type: 'Innova',
     oneWayPrice: 20,
     roundTripPrice: 19,
     ac: true,
@@ -19,7 +19,7 @@ const cars = [
     name: ' Only Etios',
     image: '/images/etios_right2.png',
     seat: '4+1',
-    type: 'ETIOS',
+    type: 'Etios',
     oneWayPrice: 15,
     roundTripPrice: 13,
     ac: true,
@@ -28,7 +28,7 @@ const cars = [
     name: 'Innova',
     image: '/images/Innova_Right.png',
     seat: '7+1',
-    type: 'SUV',
+    type: 'Innova',
     oneWayPrice: 20,
     roundTripPrice: 19,
     ac: true,

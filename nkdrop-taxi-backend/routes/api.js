@@ -42,9 +42,9 @@ router.post('/book-now', async (req, res) => {
 
         // Parallel tasks
         await Promise.all([
-            telegramService.sendBookingDetailsToGroup(filteredRequest),
-            emailService.sendEmail(filteredRequest.email, filteredRequest.fullName, bookingTable, 1, filteredRequest.tripType),
-            emailService.sendEmail(ADMIN_EMAIL, filteredRequest.fullName, bookingTable, 2, filteredRequest.tripType)
+            telegramService.sendBookingDetailsToGroup(filteredRequest).catch(e => console.error(e)),
+            emailService.sendEmail(filteredRequest.email, filteredRequest.fullName, bookingTable, 1, filteredRequest.tripType).catch(e => console.error(e)),
+            emailService.sendEmail(ADMIN_EMAIL, filteredRequest.fullName, bookingTable, 2, filteredRequest.tripType).catch(e => console.error(e))
         ]);
 
         res.status(200).json({ message: 'Booking processed successfully' });

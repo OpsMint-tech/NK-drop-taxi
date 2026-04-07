@@ -15,8 +15,13 @@ export default function VehicleCard({
 }) {
   const navigate = useNavigate();
   const handleBookNow = () => {
-    navigate('/');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    navigate('/', { state: { vehicleType: type } });
+    const element = document.getElementById('booking-form');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
   return (
     <div className="max-w-sm w-full bg-white rounded-3xl shadow-lg overflow-hidden flex flex-col hover:shadow-2xl transition-all duration-300 border border-gray-100">

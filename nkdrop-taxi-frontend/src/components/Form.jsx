@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { FaArrowLeft } from "react-icons/fa";
 import AutocompleteComponent from "./AutocompleteSecond";
-import { LoadScript } from "@react-google-maps/api";
-import { toast as toastify } from "react-toastify/unstyled";
+import { useJsApiLoader } from "@react-google-maps/api";
+import { toast as toastify } from "react-toastify";
 
 const libraries = ["places"];
 
@@ -12,6 +13,14 @@ const Form = ({ activeTab: propActiveTab, setActiveTab: propSetActiveTab, toast:
   const activeTab = propActiveTab || localActiveTab;
   const setActiveTab = propSetActiveTab || setLocalActiveTab;
   const toast = propToast || toastify;
+
+  const [formKey, setFormKey] = useState(0);
+
+  const { isLoaded } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+    libraries: ["places"]
+  });
 
   const initialState = {
     vehicleType: "",
@@ -32,6 +41,19 @@ const Form = ({ activeTab: propActiveTab, setActiveTab: propSetActiveTab, toast:
   };
 
   const [formData, setFormData] = useState(initialState);
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state && location.state.vehicleType) {
+      setFormData(prev => ({ ...prev, vehicleType: location.state.vehicleType }));
+      // Scroll to form when a vehicle is selected via navigation state
+      const element = document.getElementById('booking-form');
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  }, [location.state]);
+
   const [errors, setErrors] = useState({});
   const [showEstimation, setShowEstimation] = useState(false);
 
@@ -74,12 +96,50 @@ const Form = ({ activeTab: propActiveTab, setActiveTab: propSetActiveTab, toast:
     if (!formData.pickupLocation) newErrors.pickupLocation = "Pickup location is required";
     if (!formData.dropLocation) newErrors.dropLocation = "Drop location is required";
     if (!formData.date) newErrors.date = "Date is required";
-    if (!formData.time && activeTab === "oneWay") newErrors.time = "Time is required";
+    if (!formData.time) newErrors.time = "Time is required";
 
     if (activeTab === "roundTrip") {
       if (!formData.returnDate) newErrors.returnDate = "Return date is required";
-      if (!formData.pickupTime) newErrors.pickupTime = "Pickup time is required";
+      if (!formData.pickupTime) newErrors.pickupTime = "Return time is required";
+      
+      if (formData.date && formData.returnDate && formData.time && formData.pickupTime) {
+        if (formData.date === formData.returnDate) {
+          const [pHours, pMins] = formData.time.split(':').map(Number);
+          const [rHours, rMins] = formData.pickupTime.split(':').map(Number);
+          
+          const pTotalMins = pHours * 60 + pMins;
+          const rTotalMins = rHours * 60 + rMins;
+          
+          if (rTotalMins <= pTotalMins) {
+             newErrors.pickupTime = "Return time must be after pickup time";
+          } else if (rTotalMins - pTotalMins < 60) {
+             newErrors.pickupTime = "Return must be at least 1 hour after pickup";
+          }
+        }
+      }
     }
+
+    if (formData.date && formData.time) {
+      const today = new Date();
+      // Ensure we compare based on local date
+      const selectedDate = new Date(formData.date);
+      if (
+        selectedDate.getFullYear() === today.getFullYear() &&
+        selectedDate.getMonth() === today.getMonth() &&
+        selectedDate.getDate() === today.getDate()
+      ) {
+        const [hours, minutes] = formData.time.split(':').map(Number);
+        const selectedTime = new Date(today);
+        selectedTime.setHours(hours, minutes, 0, 0);
+
+        const thirtyMinsFromNow = new Date(today.getTime() + 30 * 60000);
+
+        if (selectedTime < thirtyMinsFromNow) {
+          newErrors.time = "Pickup must be at least 30 mins from now";
+        }
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -95,13 +155,16 @@ const Form = ({ activeTab: propActiveTab, setActiveTab: propSetActiveTab, toast:
         body: JSON.stringify(data),
       });
       if (!response.ok) throw new Error("Failed to send booking request");
+      toast.success("Your booking is confirmed with us!");
     } catch (error) {
       console.error(error);
+      toast.error("Failed to confirm booking. Please try again.");
     } finally {
       localStorage.removeItem("bookingFormData");
       setShowEstimation(false);
       setFormData(initialState);
-      window.location.reload();
+      setFormKey(prev => prev + 1);
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
@@ -142,6 +205,7 @@ const Form = ({ activeTab: propActiveTab, setActiveTab: propSetActiveTab, toast:
     });
     return {
       distance: results.routes[0].legs[0].distance.text,
+      distanceValue: results.routes[0].legs[0].distance.value,
       time: results.routes[0].legs[0].duration.text,
     };
   };
@@ -154,25 +218,38 @@ const Form = ({ activeTab: propActiveTab, setActiveTab: propSetActiveTab, toast:
     }
     if (location1 && location2) {
       const result = await calculateRouteDistance(location1, location2);
+      
+      // Validation: Minimum 1KM distance
+      if (result.distanceValue < 1000) {
+        toast.error("Pickup and drop location must be at least 1 KM apart");
+        return;
+      }
+
       setDistance(result.distance);
       setTime(result.time);
-      let distVal = parseInt(result.distance);
-      if (activeTab === "roundTrip") distVal *= 2;
-      let distanceKm = distVal + " Km";
+      
+      // Use meters for precise calculation (result.distanceValue / 1000)
+      let distValKm = result.distanceValue / 1000;
+      let billableDistance = distValKm;
+      if (activeTab === "roundTrip") billableDistance *= 2;
+      
+      let distanceKmDisplay = billableDistance.toFixed(1) + " Km";
 
       const pricing = pricingConfig[formData.vehicleType];
       let ratePerKm = activeTab === "roundTrip" ? pricing.roundTrip : pricing.oneWay;
-      let price = distVal * ratePerKm;
+      
+      // Calculate price based on kilometers
+      let price = Math.ceil(billableDistance) * ratePerKm;
 
       if (activeTab === "oneWay") {
-        if (distVal <= 400) price += 400;
+        if (billableDistance <= 400) price += 400;
         else price += 600;
       }
 
       setCalculatedPrice(price);
       const updatedData = {
         ...formData,
-        distance: distanceKm,
+        distance: distanceKmDisplay,
         tripType: activeTab,
         price: "Rs " + price,
         ratePerKm: ratePerKm,
@@ -187,10 +264,8 @@ const Form = ({ activeTab: propActiveTab, setActiveTab: propSetActiveTab, toast:
 
       localStorage.setItem("bookingFormData", JSON.stringify(updatedData));
       setShowEstimation(true);
-      window.scrollTo({ top: 0, behavior: "smooth" });
     } else {
       setShowEstimation(true);
-      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 
@@ -278,7 +353,7 @@ const Form = ({ activeTab: propActiveTab, setActiveTab: propSetActiveTab, toast:
   }
 
   return (
-    <div className="mt-10 mb-6 rounded-2xl overflow-hidden bg-[#0a0a0a]/95 backdrop-blur-md shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/5 w-full max-w-6xl mx-auto flex flex-col md:flex-row relative z-20">
+    <div id="booking-form" className="mt-10 mb-6 rounded-2xl overflow-hidden bg-[#0a0a0a]/95 backdrop-blur-md shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/5 w-full max-w-6xl mx-auto flex flex-col md:flex-row relative z-20">
       {/* Sidebar Tabs */}
       <div className="w-full md:w-64 bg-[#0a0a0a] border-r border-white/5 flex flex-col pt-10">
         <button
@@ -306,7 +381,7 @@ const Form = ({ activeTab: propActiveTab, setActiveTab: propSetActiveTab, toast:
       </div>
 
       {/* Form Content */}
-      <form onSubmit={handleSubmit} className="flex-1 p-8 md:p-12">
+      <form key={formKey} onSubmit={handleSubmit} className="flex-1 p-8 md:p-12">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-y-8 gap-x-10">
           <div className="space-y-2">
             <label className="block text-sm font-semibold text-white tracking-wide">Name</label>
@@ -368,27 +443,35 @@ const Form = ({ activeTab: propActiveTab, setActiveTab: propSetActiveTab, toast:
 
           <div className="space-y-2">
             <label className="block text-sm font-semibold text-white tracking-wide">Pickup Location</label>
-            <LoadScript googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY} libraries={libraries}>
+            {isLoaded ? (
               <AutocompleteComponent
                 onLoad={setAutocomplete1}
                 onPlaceChanged={handlePlaceChanged1}
                 placeholder="Enter Pickup Location"
                 className={`w-full bg-white border ${errors.pickupLocation ? 'border-red-500' : 'border-gray-100'} text-gray-800 px-5 py-3.5 rounded-sm focus:outline-none transition-all placeholder:text-gray-300 shadow-sm`}
               />
-            </LoadScript>
+            ) : (
+              <div className="w-full bg-white border border-gray-100 text-gray-500 px-5 py-3.5 rounded-sm shadow-sm">
+                Loading...
+              </div>
+            )}
             {errors.pickupLocation && <p className="text-red-400 text-[10px] font-bold uppercase tracking-widest">{errors.pickupLocation}</p>}
           </div>
 
           <div className="space-y-2">
             <label className="block text-sm font-semibold text-white tracking-wide">Drop Location</label>
-            <LoadScript googleMapsApiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY} libraries={libraries}>
+            {isLoaded ? (
               <AutocompleteComponent
                 onLoad={setAutocomplete2}
                 onPlaceChanged={handlePlaceChanged2}
                 placeholder="Enter Drop Location"
                 className={`w-full bg-white border ${errors.dropLocation ? 'border-red-500' : 'border-gray-100'} text-gray-800 px-5 py-3.5 rounded-sm focus:outline-none transition-all placeholder:text-gray-300 shadow-sm`}
               />
-            </LoadScript>
+            ) : (
+              <div className="w-full bg-white border border-gray-100 text-gray-500 px-5 py-3.5 rounded-sm shadow-sm">
+                Loading...
+              </div>
+            )}
             {errors.dropLocation && <p className="text-red-400 text-[10px] font-bold uppercase tracking-widest">{errors.dropLocation}</p>}
           </div>
 
