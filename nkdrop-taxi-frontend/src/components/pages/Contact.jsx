@@ -1,4 +1,5 @@
-import { FaPhone, FaEnvelope, FaMapMarkerAlt, FaFacebookF, FaInstagram, FaPinterest } from "react-icons/fa";
+import { FaPhone, FaEnvelope, FaMapMarkerAlt } from "react-icons/fa";
+import { FiFacebook, FiInstagram, FiYoutube, FiLinkedin } from "react-icons/fi";
 import WhatsAppButton from "../WhatsappButton";
 import { useState } from "react";
 import Reveal from "../Reveal";
@@ -123,11 +124,11 @@ const ContactPage = () => {
                 </div>
 
                 {/* Social Icons */}
-                <div className="flex gap-8 mt-12">
-                  <a href="#" className="hover:text-white/70 transition-colors text-lg"><FaFacebookF /></a>
-                  <a href="#" className="hover:text-white/70 transition-colors text-lg"><FaPinterest className="rotate-0" /> {/* Using Pinterest as substitute for G+ if logo fits */} </a>
-                  <a href="#" className="hover:text-white/70 transition-colors text-lg font-bold">G</a>
-                  <a href="#" className="hover:text-white/70 transition-colors text-lg font-bold">in</a>
+                <div className="flex gap-6 mt-12">
+                  <a href="#" className="text-white hover:text-white/70 transition-colors"><FiFacebook size={20} /></a>
+                  <a href="#" className="text-white hover:text-white/70 transition-colors"><FiInstagram size={20} /></a>
+                  <a href="#" className="text-white hover:text-white/70 transition-colors"><FiYoutube size={20} /></a>
+                  <a href="#" className="text-white hover:text-white/70 transition-colors"><FiLinkedin size={20} /></a>
                 </div>
               </div>
 
