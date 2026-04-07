@@ -15,6 +15,14 @@ const ContactPage = () => {
 
   const handleChange = (e) => {
     const { id, value } = e.target;
+    
+    // Restriction for phone and whatsapp fields
+    if (id === "phone" || id === "whatsapp") {
+      // Only allow digits and max 10 characters
+      if (value.length > 10) return;
+      if (value !== "" && !/^\d+$/.test(value)) return;
+    }
+
     setFormData((prev) => ({
       ...prev,
       [id]: value
@@ -23,6 +31,17 @@ const ContactPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validation for 10-digit phone and whatsapp
+    if (formData.phone && formData.phone.length !== 10) {
+      alert("Phone number must be exactly 10 digits.");
+      return;
+    }
+    if (formData.whatsapp && formData.whatsapp.length !== 10) {
+      alert("Whatsapp number must be exactly 10 digits.");
+      return;
+    }
+
     const baseUrl = import.meta.env.VITE_DEV_API_URL;
     try {
       const response = await fetch(baseUrl + "/send-email", {

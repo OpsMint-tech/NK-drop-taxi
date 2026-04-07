@@ -275,7 +275,7 @@ const Form = ({ activeTab: propActiveTab, setActiveTab: propSetActiveTab, toast:
 
   if (showEstimation) {
     return (
-      <div className="mt-8 rounded-2xl overflow-hidden bg-[#1D1D1D]/90 backdrop-blur-sm shadow-2xl border border-white/10 w-full max-w-2xl mx-auto z-20 p-8 md:p-10 text-white">
+      <div id="booking-form" className="mt-8 rounded-2xl overflow-hidden bg-[#1D1D1D]/90 backdrop-blur-sm shadow-2xl border border-white/10 w-full max-w-2xl mx-auto z-20 p-8 md:p-10 text-white">
         <div className="flex items-center gap-3 mb-8">
           <div className="w-1.5 h-6 bg-orange-500 rounded-full" />
           <h3 className="text-2xl font-bold tracking-tight">Trip Estimation</h3>

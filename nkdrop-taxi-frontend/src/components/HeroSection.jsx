@@ -45,6 +45,7 @@
 
 // HeroSection.js
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 // import Form from './Form';
 import Reveal from './Reveal';
 import { motion } from 'framer-motion';
@@ -54,6 +55,18 @@ import { ToastContainer } from "react-toastify";
 const HeroSection = () => {
     const [activeTab, setActiveTab] = useState('oneWay');
     const [toast, setToast] = useState({});
+    const navigate = useNavigate();
+
+    const handleBookNow = () => {
+        const element = document.getElementById('booking-form');
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth' });
+        }
+    };
+
+    const handleContactUs = () => {
+        navigate('/contact');
+    };
 
     return (
         <>
@@ -123,6 +136,7 @@ const HeroSection = () => {
                             className="flex flex-col sm:flex-row gap-3 md:gap-4"
                         >
                             <button
+                                onClick={handleBookNow}
                                 className="bg-[#B27E36] hover:bg-[#E18B1C] text-white
             px-8 py-3 rounded text-sm md:text-base font-semibold transition duration-300
             w-full sm:w-auto min-w-[160px]"
@@ -131,6 +145,7 @@ const HeroSection = () => {
                             </button>
 
                             <button
+                                onClick={handleContactUs}
                                 className="border border-[#B27E36] text-white
             px-8 py-3 rounded text-sm md:text-base font-semibold
             hover:bg-[#B27E36] hover:text-white transition duration-300 w-full sm:w-auto min-w-[160px]"
